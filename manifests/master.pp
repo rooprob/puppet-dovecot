@@ -1,5 +1,5 @@
 class dovecot::master (
-  userdb            = false,
+  $userdb            = false,
   $username          = 'vmail',
   $groupname         = 'vmail',
   $mod               = '0600',
