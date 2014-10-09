@@ -1,4 +1,5 @@
 class dovecot::master (
+  userdb            = false,
   $username          = 'vmail',
   $groupname         = 'vmail',
   $mod               = '0600',
@@ -37,39 +38,40 @@ class dovecot::master (
       before      => Dovecot::Config::Dovecotcfmulti['/etc/dovecot/conf.d/10-master.conf-userdblistener0'],
     }
   }
+  if $userdb  == true {
+    dovecot::config::dovecotcfmulti { '/etc/dovecot/conf.d/10-master.conf-userdblistener0':
+      config_file => 'conf.d/10-master.conf',
+      onlyif      => 'match service[ . = "auth"]/unix_listener[ . = "auth-userdb"] size == 0 ',
+      changes     => [
+        "ins unix_listener after service[ . = \"auth\"]/unix_listener[last()]",
+        'set service[ . = "auth"]/unix_listener[last()] "auth-userdb"',
+        "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/mode \"${mod}\"",
+        "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/user \"${username}\"",
+        "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/group \"${groupname}\"",
+        ],
+    }
 
-  dovecot::config::dovecotcfmulti { '/etc/dovecot/conf.d/10-master.conf-userdblistener0':
-    config_file => 'conf.d/10-master.conf',
-    onlyif      => 'match service[ . = "auth"]/unix_listener[ . = "auth-userdb"] size == 0 ',
-    changes     => [
-      "ins unix_listener after service[ . = \"auth\"]/unix_listener[last()]",
-      'set service[ . = "auth"]/unix_listener[last()] "auth-userdb"',
-      "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/mode \"${mod}\"",
-      "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/user \"${username}\"",
-      "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/group \"${groupname}\"",
-      ],
-  }
+    dovecot::config::dovecotcfmulti { '/etc/dovecot/conf.d/10-master.conf-userdblistener1':
+      config_file => 'conf.d/10-master.conf',
+      onlyif      => 'match service[ . = "auth"]/unix_listener[ . = "auth-userdb"] size == 1 ',
+      changes     => [
+        "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/mode \"${mod}\"",
+        "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/user \"${username}\"",
+        "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/group \"${groupname}\"",
+        ],
+      require     => Dovecot::Config::Dovecotcfmulti['/etc/dovecot/conf.d/10-master.conf-userdblistener0'],
+    }
 
-  dovecot::config::dovecotcfmulti { '/etc/dovecot/conf.d/10-master.conf-userdblistener1':
-    config_file => 'conf.d/10-master.conf',
-    onlyif      => 'match service[ . = "auth"]/unix_listener[ . = "auth-userdb"] size == 1 ',
-    changes     => [
-      "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/mode \"${mod}\"",
-      "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/user \"${username}\"",
-      "set service[ . = \"auth\"]/unix_listener[ . = \"auth-userdb\"]/group \"${groupname}\"",
-      ],
-    require     => Dovecot::Config::Dovecotcfmulti['/etc/dovecot/conf.d/10-master.conf-userdblistener0'],
-  }
+    dovecot::config::dovecotcfsingle { "service[ . = \"auth-worker\"]/user":
+      ensure      => $auth_worker_user ? { false => absent, default => present },
+      config_file => 'conf.d/10-master.conf',
+      value       => $auth_worker_user,
+    }
 
-  dovecot::config::dovecotcfsingle { "service[ . = \"auth-worker\"]/user":
-    ensure      => $auth_worker_user ? { false => absent, default => present },
-    config_file => 'conf.d/10-master.conf',
-    value       => $auth_worker_user,
-  }
-
-  dovecot::config::dovecotcfsingle { "service[ . = \"auth-worker\"]/group":
-    ensure      => $auth_worker_group ? { false => absent, default => present },
-    config_file => 'conf.d/10-master.conf',
-    value       => $auth_worker_group,
+    dovecot::config::dovecotcfsingle { "service[ . = \"auth-worker\"]/group":
+      ensure      => $auth_worker_group ? { false => absent, default => present },
+      config_file => 'conf.d/10-master.conf',
+      value       => $auth_worker_group,
+    }
   }
 }
