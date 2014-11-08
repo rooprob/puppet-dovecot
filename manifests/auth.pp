@@ -5,7 +5,8 @@ class dovecot::auth (
   $auth_default_realm     = "${::fqdn}",
   $auth_gssapi_hostname   = undef,
   $auth_krb5_keytab       = undef,
-
+  $auth_ssl_require_client_cert = 'no',
+  $auth_ssl_username_from_cert = 'no',
 ) {
   include dovecot
 
@@ -16,6 +17,8 @@ class dovecot::auth (
       "set auth_mechanisms '${auth_mechanisms}'",
       "set auth_username_format '${auth_username_format}'",
       "set auth_default_realm '${auth_default_realm}'",
+      "set auth_ssl_require_client_cert '${auth_ssl_require_client_cert}'",
+      "set auth_ssl_username_from_cert '${auth_ssl_username_from_cert}'",
     ],
   }
 

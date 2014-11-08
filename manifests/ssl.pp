@@ -4,12 +4,24 @@ class dovecot::ssl (
   $ssl_keyfile       = false,
   $ssl_ca            = false,
   $ssl_key_pass_file = false,
+  $ssl_verify_client_cert = 'no',
+  $ssl_cert_username_field = false,
 ) {
   include dovecot
 
   dovecot::config::dovecotcfsingle { 'ssl':
     config_file => 'conf.d/10-ssl.conf',
     value       => $ssl,
+  }
+  dovecot::config::dovecotcfsingle { 'ssl_verify_client_cert':
+    config_file => 'conf.d/10-ssl.conf',
+    value       => $ssl_verify_client_cert,
+  }
+
+  dovecot::config::dovecotcfsingle { 'ssl_cert_username_field':
+    ensure      => $ssl_cert_username_field ? { false => absent, default => present },
+    config_file => 'conf.d/10-ssl.conf',
+    value       => "${ssl_cert_username_field}",
   }
 
   # note that the < on the values for these is intential, it basically says read the contents of the file into the config
